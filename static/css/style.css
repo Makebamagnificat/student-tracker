@@ -1,0 +1,86 @@
+/* General body style */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f4f4f9;
+    color: #333;
+}
+
+/* Headings */
+h1, h2 {
+    text-align: center;
+    color: #2c3e50;
+}
+
+/* Forms for login/register/log */
+form {
+    max-width: 400px;
+    margin: 20px auto;
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+form label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+form input, form select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+form button {
+    margin-top: 15px;
+    padding: 10px;
+    width: 100%;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: #2980b9;
+}
+
+/* Dashboard table */
+table {
+    width: 90%;
+    margin: 20px auto;
+    border-collapse: collapse;
+    text-align: center;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+table th, table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+
+table th {
+    background-color: #3498db;
+    color: white;
+}
+
+/* Color-coded weather rows */
+tr.sunny { background-color: #fff59d; }
+tr.rain { background-color: #81d4fa; }
+tr.clouds { background-color: #cfd8dc; }
+tr.unknown { background-color: #e0e0e0; }
+
+/* Chart container */
+canvas {
+    display: block;
+    margin: 0 auto 30px;
+    max-width: 800px;
+}

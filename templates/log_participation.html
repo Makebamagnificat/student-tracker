@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Log Student Participation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        form {
+            width: 400px;
+            margin-top: 20px;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            margin-top: 15px;
+            padding: 10px 15px;
+            cursor: pointer;
+            background-color: #36A2EB;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #2b82c9;
+        }
+        a {
+            margin-top: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Log Student Participation</h1>
+    <p>Welcome, {{ current_user.username }} | <a href="/logout">Logout</a></p>
+
+    <form method="POST">
+        <label for="student_id">Select Student:</label>
+        <select name="student_id" id="student_id" required>
+            <option value="" disabled selected>Select a student</option>
+            {% for student in students %}
+                <option value="{{ student.id }}">{{ student.name }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="activity">Activity:</label>
+        <input type="text" name="activity" id="activity" placeholder="Enter activity" required>
+
+        <label for="city">City (for weather):</label>
+        <input type="text" name="city" id="city" placeholder="Enter city" required>
+
+        <button type="submit">Log Participation</button>
+    </form>
+
+    <p><a href="/">Back to Dashboard</a></p>
+</body>
+</html>
