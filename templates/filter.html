@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Filter Participation Logs</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { margin-bottom: 20px; }
+        form { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 30px; }
+        label { display: block; font-size: 13px; margin-bottom: 4px; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        button {
+            padding: 8px 20px; background-color: #36A2EB; color: white;
+            border: none; border-radius: 4px; cursor: pointer; font-size: 14px;
+        }
+        button:hover { background-color: #2b82c9; }
+        table { border-collapse: collapse; width: 95%; margin-bottom: 30px; }
+        th, td { border: 1px solid #999; padding: 8px; text-align: left; }
+        th { background-color: #2d6ea0; color: white; }
+        .Sunny  { background-color: #fff59d; }
+        .Cloudy { background-color: #cfd8dc; }
+        .Rainy  { background-color: #81d4fa; }
+        .Windy  { background-color: #c8e6c9; }
+        .Unknown { background-color: #e0e0e0; }
+        .no-results { color: #888; font-style: italic; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Filter Participation Logs</h1>
+    <p>Welcome, {{ current_user.username }} | <a href="/logout">Logout</a> | <a href="/">Dashboard</a> | <a href="/log">Log Participation</a></p>
+
+    <form method="POST">
+        <div>
+            <label for="student_id">Student:</label>
+            <select name="student_id" id="student_id">
+                <option value="">All Students</option>
+                {% for student in students %}
+                    <option value="{{ student.id }}" {% if selected_student == student.id|string %}selected{% endif %}>
+                        {{ student.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label for="weather_condition">Weather:</label>
+            <select name="weather_condition" id="weather_condition">
+                <option value="">All Weather</option>
+                <option value="Sunny"  {% if selected_weather == 'Sunny'  %}selected{% endif %}>Sunny</option>
+                <option value="Cloudy" {% if selected_weather == 'Cloudy' %}selected{% endif %}>Cloudy</option>
+                <option value="Rainy"  {% if selected_weather == 'Rainy'  %}selected{% endif %}>Rainy</option>
+                <option value="Windy"  {% if selected_weather == 'Windy'  %}selected{% endif %}>Windy</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="date">Date:</label>
+            <input type="date" name="date" id="date" value="{{ selected_date }}">
+        </div>
+
+        <button type="submit">Apply Filter</button>
+        <a href="/filter"><button type="button" style="background:#888;">Reset</button></a>
+    </form>
+
+    {% if request.method == 'POST' %}
+        {% if logs %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Participation Type</th>
+                    <th>Activity</th>
+                    <th>Date</th>
+                    <th>Weather</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr class="{{ log.weather_condition or 'Unknown' }}">
+                    <td>{{ log.student_name }}</td>
+                    <td>{{ log.participation_type }}</td>
+                    <td>{{ log.activity }}</td>
+                    <td>{{ log.date }}</td>
+                    <td>{{ log.weather_condition }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p class="no-results">No results found for the selected filters.</p>
+        {% endif %}
+    {% endif %}
+</body>
+</html>

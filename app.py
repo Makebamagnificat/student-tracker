@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
 from extensions import db
 from weather import get_weather
@@ -11,7 +10,7 @@ from datetime import date
 # ----------------------
 app = Flask(__name__)
 app.config['SECRET_KEY'] = "secret123"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///student_tracker.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Makeba123@localhost/student_tracker'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
@@ -39,17 +38,21 @@ WEATHER_LABEL_MAP = {
 # Models
 # ----------------------
 class User(UserMixin, db.Model):
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
 
 class Student(db.Model):
+    __tablename__ = 'student'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
 
 class ParticipationLog(db.Model):
+    __tablename__ = 'participation_log'
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
+    participation_type = db.Column(db.String(50), nullable=False)
     activity = db.Column(db.String(255))
     date = db.Column(db.Date, default=date.today)
     weather_condition = db.Column(db.String(50))
@@ -59,7 +62,7 @@ class ParticipationLog(db.Model):
 # ----------------------
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 # ----------------------
 # Initialize Database
@@ -79,15 +82,15 @@ def index():
     logs = ParticipationLog.query.all()
     log_list = []
     for log in logs:
-        student = Student.query.get(log.student_id)
+        student = db.session.get(Student, log.student_id)
         log_list.append({
             "student_name": student.name if student else "Unknown",
+            "participation_type": log.participation_type,
             "activity": log.activity,
             "date": log.date,
             "weather_condition": log.weather_condition
         })
 
-    # Always show all 4 categories, starting at 0
     weather_counts = {'Sunny': 0, 'Cloudy': 0, 'Rainy': 0, 'Windy': 0}
     for log in logs:
         raw = log.weather_condition or 'Unknown'
@@ -109,10 +112,18 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+
+        # Check if username already exists
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            flash("Username already exists. Please choose a different one.", "danger")
+            return redirect('/register')
+
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         user = User(username=username, password=hashed_password)
         db.session.add(user)
         db.session.commit()
+        flash("Account created! Please log in.", "success")
         return redirect('/login')
     return render_template('register.html')
 
@@ -142,25 +153,24 @@ def log_participation():
     students = Student.query.all()
     if request.method == 'POST':
         student_id = request.form.get('student_id')
+        participation_type = request.form.get('participation_type')
         activity = request.form.get('activity')
         city = request.form.get('city')
 
-        if not student_id or not activity or not city:
+        if not student_id or not participation_type or not activity or not city:
             flash("Please provide all fields.", "warning")
             return redirect(url_for('log_participation'))
 
         weather_data = get_weather(city)
-
-        # Normalize the weather condition before saving
         raw_condition = weather_data.get('condition', 'Unknown')
         normalized_condition = WEATHER_LABEL_MAP.get(raw_condition, 'Cloudy')
 
         log = ParticipationLog(
             student_id=student_id,
+            participation_type=participation_type,
             activity=activity,
             weather_condition=normalized_condition
         )
-
         db.session.add(log)
         db.session.commit()
 
@@ -168,6 +178,40 @@ def log_participation():
         return redirect('/')
 
     return render_template("log_participation.html", students=students)
+
+@app.route('/filter', methods=['GET', 'POST'])
+@login_required
+def filter_logs():
+    students = Student.query.all()
+    logs = []
+    selected_student = request.form.get('student_id', '')
+    selected_weather = request.form.get('weather_condition', '')
+    selected_date = request.form.get('date', '')
+
+    if request.method == 'POST':
+        query = ParticipationLog.query
+        if selected_student:
+            query = query.filter_by(student_id=selected_student)
+        if selected_weather:
+            query = query.filter_by(weather_condition=selected_weather)
+        if selected_date:
+            query = query.filter_by(date=selected_date)
+
+        results = query.all()
+        for log in results:
+            student = db.session.get(Student, log.student_id)
+            logs.append({
+                "student_name": student.name if student else "Unknown",
+                "participation_type": log.participation_type,
+                "activity": log.activity,
+                "date": log.date,
+                "weather_condition": log.weather_condition
+            })
+
+    return render_template("filter.html", students=students, logs=logs,
+                           selected_student=selected_student,
+                           selected_weather=selected_weather,
+                           selected_date=selected_date)
 
 # ----------------------
 # Run App

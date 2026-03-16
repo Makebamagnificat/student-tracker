@@ -5,47 +5,31 @@
     <title>Log Student Participation</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        h1 {
-            margin-bottom: 20px;
-        }
-        form {
-            width: 400px;
-            margin-top: 20px;
-        }
-        label {
-            display: block;
-            margin: 10px 0 5px;
-        }
-        input, select {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-        }
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { margin-bottom: 20px; }
+        form { width: 400px; margin-top: 20px; }
+        label { display: block; margin: 10px 0 5px; }
+        input, select { width: 100%; padding: 8px; box-sizing: border-box; }
         button {
-            margin-top: 15px;
-            padding: 10px 15px;
-            cursor: pointer;
-            background-color: #36A2EB;
-            color: white;
-            border: none;
-            border-radius: 4px;
+            margin-top: 15px; padding: 10px 15px; cursor: pointer;
+            background-color: #36A2EB; color: white; border: none; border-radius: 4px;
         }
-        button:hover {
-            background-color: #2b82c9;
-        }
-        a {
-            margin-top: 20px;
-            display: inline-block;
-        }
+        button:hover { background-color: #2b82c9; }
+        .alert { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .alert-success { background-color: #d4edda; color: #155724; }
+        .alert-warning { background-color: #fff3cd; color: #856404; }
+        .alert-danger  { background-color: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
     <h1>Log Student Participation</h1>
-    <p>Welcome, {{ current_user.username }} | <a href="/logout">Logout</a></p>
+    <p>Welcome, {{ current_user.username }} | <a href="/logout">Logout</a> | <a href="/">Dashboard</a></p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
 
     <form method="POST">
         <label for="student_id">Select Student:</label>
@@ -56,11 +40,19 @@
             {% endfor %}
         </select>
 
-        <label for="activity">Activity:</label>
-        <input type="text" name="activity" id="activity" placeholder="Enter activity" required>
+        <label for="participation_type">Participation Type:</label>
+        <select name="participation_type" id="participation_type" required>
+            <option value="" disabled selected>Select type</option>
+            <option value="Answered Question">Answered Question</option>
+            <option value="Asked Question">Asked Question</option>
+            <option value="Activity Involvement">Activity Involvement</option>
+        </select>
+
+        <label for="activity">Activity Description:</label>
+        <input type="text" name="activity" id="activity" placeholder="e.g. Solved math problem on board" required>
 
         <label for="city">City (for weather):</label>
-        <input type="text" name="city" id="city" placeholder="Enter city" required>
+        <input type="text" name="city" id="city" placeholder="Enter city name" required>
 
         <button type="submit">Log Participation</button>
     </form>

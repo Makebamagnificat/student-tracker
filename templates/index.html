@@ -6,70 +6,42 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        table {
-            border-collapse: collapse;
-            width: 80%;
-            margin-bottom: 30px;
-        }
-        th, td {
-            border: 1px solid #999;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        /* Weather row coloring */
-        .Sunny { background-color: #fff59d; }
-        .Rain { background-color: #81d4fa; }
-        .Clouds { background-color: #cfd8dc; }
-        .Windy { background-color: #c8e6c9; }
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 90%; margin-bottom: 30px; }
+        th, td { border: 1px solid #999; padding: 8px; text-align: left; }
+        th { background-color: #2d6ea0; color: white; }
+        .Sunny  { background-color: #fff59d; }
+        .Cloudy { background-color: #cfd8dc; }
+        .Rainy  { background-color: #81d4fa; }
+        .Windy  { background-color: #c8e6c9; }
         .Unknown { background-color: #e0e0e0; }
-
-        .chart-container {
-            width: 75%;
-            max-width: 700px;
-            margin-bottom: 30px;
-            position: relative;
-            height: 350px;
-        }
-
-        .chart-legend {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            margin-bottom: 12px;
-            font-size: 13px;
-        }
-
-        .chart-legend span {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .legend-box {
-            width: 12px;
-            height: 12px;
-            border-radius: 3px;
-            display: inline-block;
-        }
+        .chart-container { width: 75%; max-width: 700px; margin-bottom: 30px; position: relative; height: 350px; }
+        .chart-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; font-size: 13px; }
+        .chart-legend span { display: flex; align-items: center; gap: 6px; }
+        .legend-box { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+        .alert { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .alert-success { background-color: #d4edda; color: #155724; }
+        .alert-warning { background-color: #fff3cd; color: #856404; }
+        .alert-danger  { background-color: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
     <h1>Dashboard</h1>
-    <p>Welcome, {{ current_user.username }} | <a href="/logout">Logout</a> | <a href="/log">Log Participation</a></p>
+    <p>Welcome, {{ current_user.username }} | <a href="/logout">Logout</a> | <a href="/log">Log Participation</a> | <a href="/filter">Filter Logs</a></p>
 
-    <!-- Chart -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
     <h2>Activities by Weather</h2>
-
     <div class="chart-legend">
         <span><span class="legend-box" style="background:#f6c23e;"></span>Sunny</span>
         <span><span class="legend-box" style="background:#5b9bd5;"></span>Cloudy</span>
         <span><span class="legend-box" style="background:#3a7ebf;"></span>Rainy</span>
         <span><span class="legend-box" style="background:#66bb6a;"></span>Windy</span>
     </div>
-
     <div class="chart-container">
         <canvas id="activityChart"></canvas>
     </div>
@@ -82,17 +54,13 @@
             'Rainy':  { bg: 'rgba(58,126,191,0.85)',  border: '#1a4f7a' },
             'Windy':  { bg: 'rgba(102,187,106,0.85)', border: '#388e3c' }
         };
-
         const serverLabels = {{ weather_labels|tojson }};
         const serverCounts = {{ activity_counts|tojson }};
-
         const dataMap = {};
         serverLabels.forEach((label, i) => { dataMap[label] = serverCounts[i]; });
-
         const counts = allLabels.map(l => dataMap[l] || 0);
         const bgColors = allLabels.map(l => colorMap[l].bg);
         const borderColors = allLabels.map(l => colorMap[l].border);
-
         const ctx = document.getElementById('activityChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
@@ -113,37 +81,22 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => ` ${ctx.parsed.y} activities`
-                        }
-                    }
+                    tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.y} activities` } }
                 },
                 scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { font: { size: 13 } }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1,
-                            precision: 0,
-                            font: { size: 12 }
-                        },
-                        grid: { color: 'rgba(0,0,0,0.07)' }
-                    }
+                    x: { grid: { display: false }, ticks: { font: { size: 13 } } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, font: { size: 12 } }, grid: { color: 'rgba(0,0,0,0.07)' } }
                 }
             }
         });
     </script>
 
-    <!-- Table -->
     <h2>Participation Logs</h2>
     <table>
         <thead>
             <tr>
                 <th>Student Name</th>
+                <th>Participation Type</th>
                 <th>Activity</th>
                 <th>Date</th>
                 <th>Weather</th>
@@ -151,8 +104,9 @@
         </thead>
         <tbody>
             {% for log in logs %}
-            <tr class="{% if log.weather_condition %}{{ log.weather_condition }}{% else %}Unknown{% endif %}">
+            <tr class="{{ log.weather_condition or 'Unknown' }}">
                 <td>{{ log.student_name }}</td>
+                <td>{{ log.participation_type }}</td>
                 <td>{{ log.activity }}</td>
                 <td>{{ log.date }}</td>
                 <td>{{ log.weather_condition }}</td>
